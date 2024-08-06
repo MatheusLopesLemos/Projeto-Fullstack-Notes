@@ -9,6 +9,14 @@ aside{
    
 }
 
+@media (max-width:1000px){
+
+    aside{
+        position: relative;
+    }
+    
+}
+
 aside strong{
     font-size: 20px;
     text-align: center;
