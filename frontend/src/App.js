@@ -6,32 +6,82 @@ import "./css/global.css";
 import "./css/sidebar.css";
 import "./css/main.css";
 import Notes from './Components/Notes';
+import RadioButton from './Components/RadioButton';
 import api from "./services/api";
+
 
 
 
 function App() {
 
-  
+  const [ selectedValue, setSelectedValue ] = useState("all")
 
   const [ title, setTitles ] = useState("")
   const [ notes, setNotes ] = useState("")
   const [ allNotes, setAllNotes ] = useState([])
 
   useEffect(() => {
-    async function getAllNotes() {
-
-      const response = await api.get('/annotations');
-      
-      setAllNotes(response.data)
-
-
-    }
 
     getAllNotes()
     
-
   },[])
+
+  async function getAllNotes() {
+
+    const response = await api.get('/annotations');
+    
+    setAllNotes(response.data)
+
+  }
+
+  async function handleDelete (id) {
+
+    const deletedNote = await api.delete(`/annotations/${id}`)
+    
+    if(deletedNote) {
+
+      setAllNotes(allNotes.filter(notes => notes._id != id))
+
+    }
+
+  }
+
+  async function loadNotes(option) {
+
+    const params = { priority: option }
+    const response = await api.get(`/priorities`, { params })
+
+    if (response){
+
+      setAllNotes(response.data)
+
+    }
+
+  }
+
+  async function handleChange(e) {
+
+    setSelectedValue(e.value)
+
+    if(e.checked && e.value != "all") {
+      loadNotes(e.value)
+    } else {
+      getAllNotes()
+    }
+
+  }
+
+  async function handleChangePriority(id) {
+
+    const notes = await api.post(`/priorities/${id}`)
+
+    if(notes && selectedValue != 'all') {
+      loadNotes(selectedValue)
+    } else if(notes) {
+      setAllNotes()
+    }
+
+  }
 
   async function  handleSubmit(e) {
 
@@ -42,6 +92,13 @@ function App() {
       notes,
       priority: false,
     });
+
+    if(selectedValue != 'all') {
+
+      getAllNotes()
+      setSelectedValue("all")
+
+    }
 
     setTitles(" ")
     setNotes(" ")
@@ -72,6 +129,7 @@ function App() {
           <div className="input-block">
             <label htmlFor="title">Título da anotação</label>
             <input 
+              maxLength={30}
               value= {title} 
               required
               onChange={e => setTitles(e.target.value)}/>
@@ -85,12 +143,20 @@ function App() {
           </div>
           <button id="btn_submit" type="submit" >Salvar</button>
         </form>
+        <RadioButton 
+          selectedValue={selectedValue} 
+          handleChange={handleChange}
+        />      
       </aside>
       <main>
         <ul>
           {allNotes.map(data => (
-            <Notes data = {data}/>
-          ))}         
+            <Notes 
+            key={data.id}
+            data = {data}
+            handleDelete={handleDelete}
+            handleChangePriority={handleChangePriority}/>
+          ))}  
         </ul>
       </main>
     </div>
